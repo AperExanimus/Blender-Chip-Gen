@@ -1,5 +1,5 @@
 # 🎲 Blender-Chip-Gen
-Initial draft to automatically generate a pocker chip with pre-aligned text in Blender. 
+Initial draft to automatically generate a poker chip with pre-aligned text in Blender. 
 
 > **⚠️ Note:** This is currently a **test version** with a generic text template and alignment. Future updates are intended to provide a cleaner text curve and take inputs for text and SVGs. 
 
