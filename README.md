@@ -26,7 +26,7 @@ Automatically generate poker chips with pre-aligned text in Blender. Choose betw
    ```
 3. Run the script with your PNG, STL and desired scale factor:
    ```bash
-   ./png_to_blend.sh your_image.png your_model.stl
+   ./png_to_blend.sh your_image.png your_model.stl 0.25
    ```
 4. Open the generated `.blend` file in Blender.
 
