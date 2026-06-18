@@ -2,17 +2,21 @@
 
 INPUT_PNG="$1"
 INPUT_STL="$2"
+SCALE_FACTOR_INPUT="${3:-0.9}"  # Default to 0.9 (90%) if not provided
 
+# Validate inputs
 if [ -z "$INPUT_PNG" ] || [ -z "$INPUT_STL" ]; then 
-    echo "Usage: $0 <image.png> <disk.stl>"
+    echo "Usage: $0 <image.png> <disk.stl> [scale_factor]"
+    echo "Example: $0 logo.png disk.stl 0.8   (Scales to 80%)"
     exit 1
 fi
 
-BASENAME=$(basename "${INPUT_PNG%.*}")
-STL_BASENAME=$(basename "${INPUT_STL%.*}")
-OUTPUT_SVG="${BASENAME}.svg"
-TEMP_PY="temp_blender.py"
+BASENAME_PNG=$(basename "${INPUT_PNG%.*}")
+BASENAME_STL=$(basename "${INPUT_STL%.*}")
+OUTPUT_SVG="${BASENAME_PNG}.svg"
+TEMP_PY="temp_blender_dynamic.py"
 
+# Check Blender command
 if command -v blender &> /dev/null; then
     BLENDER_CMD="blender"
 fi
@@ -27,7 +31,7 @@ fi
 echo "✓ SVG created: $OUTPUT_SVG"
 echo ""
 
-echo "=== Step 2: Loading STL, Importing SVG, Scaling SVG to 90% of STL, Placing SVG on Top ==="
+echo "=== Step 2: Processing with Scale: ${SCALE_FACTOR_INPUT} ==="
 
 cat > "$TEMP_PY" << 'PYTHON_EOF'
 import bpy
@@ -82,11 +86,15 @@ bpy.ops.object.select_all(action='SELECT')
 bpy.ops.object.delete(use_global=False)
 print("Scene cleaned.")
 
-if len(sys.argv) < 3:
+if len(sys.argv) < 4:
+    print("Missing arguments!")
     sys.exit(1)
 
-stl_path = sys.argv[-2]
-svg_path = sys.argv[-1]
+stl_path = sys.argv[-3]
+svg_path = sys.argv[-2]
+target_scale_input = float(sys.argv[-1])
+
+print(f"Input Scale Factor: {target_scale_input}")
 
 # 1. Load STL
 stl_obj = load_stl_manually(stl_path)
@@ -117,6 +125,7 @@ print(f"Found {len(svg_objs)} curves. Converting to Mesh...")
 # 3. Convert Curves to Meshes
 for obj in svg_objs:
     obj.select_set(True)
+# FIX: Changed objects_active to objects.active
 bpy.context.view_layer.objects.active = svg_objs[0]
 bpy.ops.object.convert(target='MESH')
 
@@ -138,16 +147,17 @@ current_width = max(max_x - min_x, max_y - min_y)
 
 print(f"Current SVG Width: {current_width:.4f}")
 
-# 5. Calculate Scale Factor (90%)
-# Calculate base scale first, then multiply by 0.9
+# 5. Calculate Final Scale Factor
 base_scale = target_width / current_width if current_width > 0 else 1.0
-scale_factor = base_scale * 0.9  # <-- THIS MAKES IT 90%
+final_scale = base_scale * target_scale_input
 
-print(f"Base Scale: {base_scale:.4f} | Final Scale (90%): {scale_factor:.4f}")
+print(f"Base Scale (100%): {base_scale:.4f}")
+print(f"Final Scale ({target_scale_input*100}%): {final_scale:.4f}")
 
 # 6. Apply Scale
 for obj in mesh_objs:
-    obj.scale = (scale_factor, scale_factor, scale_factor)
+    obj.scale = (final_scale, final_scale, final_scale)
+    # FIX: Changed objects_active to objects.active
     bpy.context.view_layer.objects.active = obj
     obj.select_set(True)
     bpy.ops.object.transform_apply(scale=True, location=False, rotation=False)
@@ -169,9 +179,7 @@ center_x = (new_min_x + new_max_x) / 2
 center_y = (new_min_y + new_max_y) / 2
 center_z = (new_min_z + new_max_z) / 2
 
-# Lift to the TOP of the disk 
-# Previous was (height/2) which puts it in the middle.
-# New is (height) which puts it on top.
+
 lift_height = stl_obj.dimensions.z 
 
 offset_x = stl_obj.location.x - center_x
@@ -193,24 +201,30 @@ f_min_y = min(v[1] for v in final_verts)
 f_max_y = max(v[1] for v in final_verts)
 final_w = max(f_max_x - f_min_x, f_max_y - f_min_y)
 
+expected_w = target_width * target_scale_input
 print(f"--- FINAL CHECK ---")
-print(f"Final SVG Width: {final_w:.4f} (Target was {target_width:.4f}, so 90% should be ~{target_width*0.9:.4f})")
-print(f"Final SVG Z-High: {max(v[2] for v in final_verts):.4f} | Disk Top: {stl_obj.location.z + stl_obj.dimensions.z:.4f}")
+print(f"Final SVG Width: {final_w:.4f}")
+print(f"Expected Width:  {expected_w:.4f} (Target: {target_width:.4f} x Scale: {target_scale_input})")
 
-out_name = stl_path.replace('.stl', '_with_svg.blend')
-bpy.ops.wm.save_as_mainfile(filepath=out_name)
-print("Saved.")
+# 9. Generate Combined Filename
+stl_name = os.path.splitext(os.path.basename(stl_path))[0]
+svg_name = os.path.splitext(os.path.basename(svg_path))[0]
+output_filename = f"{stl_name}_{svg_name}.blend"
+
+out_path = os.path.join(os.path.dirname(stl_path), output_filename)
+bpy.ops.wm.save_as_mainfile(filepath=out_path)
+print(f"Saved as: {os.path.basename(out_path)}")
 PYTHON_EOF
 
-$BLENDER_CMD --background --python "$TEMP_PY" -- "$INPUT_STL" "$OUTPUT_SVG"
+$BLENDER_CMD --background --python "$TEMP_PY" -- "$INPUT_STL" "$OUTPUT_SVG" "$SCALE_FACTOR_INPUT"
 
 RESULT=$?
 rm -f "$TEMP_PY"
 
 if [ $RESULT -eq 0 ]; then
     echo ""
-    echo "=== ALL DONE SUCCESSFULLY ==="
-    echo "Output: ${STL_BASENAME}_with_svg.blend"
+    echo "=== SUCCESS ==="
+    echo "Output: ${BASENAME_STL}_${BASENAME_PNG}.blend"
 else
     echo "✗ Process failed."
     exit 1
