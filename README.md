@@ -10,12 +10,10 @@ Automatically generate poker chips with pre-aligned text in Blender. Choose betw
 - **Undo Support:** Blender add-on fully supports Blender's undo stack (`bl_options = {'REGISTER', 'UNDO'}`).
 - **Menu Integration:** Adds a "Generate Poker Chip (Test)" option to the **Object** menu (add-on only).
 
-## 📸 Preview
-![Preview](./preview.png)
 
 ## 🛠️ Installation
 
-### Option 1: Using `png_to_blend.sh` (Recommended)
+### Option 1: Using `png_to_blend.sh` 
 
 1. Clone or download this repository:
    ```bash
@@ -31,6 +29,8 @@ Automatically generate poker chips with pre-aligned text in Blender. Choose betw
    ./png_to_blend.sh your_image.png your_vector.svg
    ```
 4. Open the generated `.blend` file in Blender.
+
+![Preview](./svg_preview.png)
 
 ### Option 2: Using `poker_chip_gen.py` as a Blender Add-on
 
@@ -65,6 +65,9 @@ The script will process your PNG along with your STL file to create a combined B
    - A **Cylinder** (Base)
    - A **Bezier Circle** (Rim guide)
    - A **Text Object** (Wrapped around the rim)
+
+![Preview](./preview.png)
+ 
 
 ## 📂 File Structure
 - `png_to_blend.sh`: Main shell script for converting PNG files to Blender models.
