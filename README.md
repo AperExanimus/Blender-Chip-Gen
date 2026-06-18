@@ -26,9 +26,9 @@ Automatically generate poker chips with pre-aligned text in Blender. Choose betw
    ```bash
    chmod +x png_to_blend.sh
    ```
-3. Run the script with your PNG file:
+3. Run the script with your PNG and SVG files:
    ```bash
-   ./png_to_blend.sh your_image.png
+   ./png_to_blend.sh your_image.png your_vector.svg
    ```
 4. Open the generated `.blend` file in Blender.
 
@@ -51,10 +51,10 @@ Automatically generate poker chips with pre-aligned text in Blender. Choose betw
 ### Using `png_to_blend.sh`
 
 ```bash
-./png_to_blend.sh input.png [output_filename]
+./png_to_blend.sh input.png input.svg
 ```
 
-The script will process your PNG and create a Blender file ready to use.
+The script will process your PNG along with your STL file to create a combined Blender file ready to use.
 
 ### Using the Blender Add-on
 
@@ -83,12 +83,10 @@ The script will process your PNG and create a Blender file ready to use.
   - Adds text "♦ Text ♦" and applies a **Curve Modifier** using the circle.
 
 ## 🚧 Roadmap / TODOs
-- [ ] Enhance PNG processing with better image handling.
 - [ ] Add a UI Panel in the Sidebar (`N` panel) to adjust:
   - Text Content
   - Font Size
-- [ ] Optimize the curve generation logic.
-- [ ] Support for SVG inputs.
+- [ ] Add automated stencil generation for easier post-processing of 3D printed objects. 
 
 ## 📄 License
 This project is provided as-is for educational and testing purposes. Feel free to modify and distribute.
